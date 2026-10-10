@@ -2,6 +2,54 @@
 (() => {
   'use strict';
 
+  const root = document.documentElement;
+  const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+  const colorPreference = matchMedia('(prefers-color-scheme: dark)');
+  const themeKey = 'electric-bid-site-theme';
+  const themeToggle = document.querySelector('.theme-toggle');
+  function applyTheme(theme, source = 'system') {
+    root.dataset.theme = theme;
+    root.dataset.themeSource = source;
+    const light = theme === 'light';
+    const label = light ? '切换到暗色模式' : '切换到亮色模式';
+    themeToggle.setAttribute('aria-label', label);
+    themeToggle.setAttribute('title', label);
+    themeToggle.querySelector('.theme-label').textContent = light ? '暗色' : '亮色';
+    document.querySelector('meta[name="theme-color"]').content = light ? '#f6f8f5' : '#090c10';
+  }
+  applyTheme(root.dataset.theme, root.dataset.themeSource);
+  themeToggle.addEventListener('click', () => {
+    const theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(theme, 'user');
+    try { localStorage.setItem(themeKey, theme); } catch { /* Keep the choice for this page session. */ }
+  });
+  colorPreference.addEventListener('change', (event) => {
+    if (root.dataset.themeSource !== 'user') applyTheme(event.matches ? 'dark' : 'light');
+  });
+  window.addEventListener('storage', (event) => {
+    if (event.key !== themeKey && event.key !== null) return;
+    let theme;
+    try { theme = localStorage.getItem(themeKey); } catch { return; }
+    const explicit = theme === 'dark' || theme === 'light';
+    applyTheme(explicit ? theme : (colorPreference.matches ? 'dark' : 'light'), explicit ? 'user' : 'system');
+  });
+
+  const progress = document.querySelector('.reading-progress');
+  let scrollFrame = 0;
+  function scheduleProgress() {
+    if (scrollFrame) return;
+    scrollFrame = requestAnimationFrame(() => {
+      const distance = root.scrollHeight - root.clientHeight;
+      const fraction = distance > 0 ? Math.min(1, Math.max(0, window.scrollY / distance)) : 0;
+      progress.style.transform = `scaleX(${fraction})`;
+      scrollFrame = 0;
+    });
+  }
+  window.addEventListener('scroll', scheduleProgress, { passive: true });
+  window.addEventListener('resize', scheduleProgress);
+  if ('ResizeObserver' in window) new ResizeObserver(scheduleProgress).observe(document.body);
+  scheduleProgress();
+
   const icon = (name) => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
   const title = (text, badge, tabs) => `
     <div class="demo-breadcrumb">我的项目 <span>/</span> 光伏 EPC 采购项目</div>
@@ -67,6 +115,8 @@
 
   const tabs = [...document.querySelectorAll('[data-scene]')];
   const panel = document.getElementById('scene-panel');
+  let currentScene = 'requirement';
+  let sceneAnimations = [];
   function selectScene(name, focus = false) {
     const scene = scenes[name];
     if (!scene) return;
@@ -76,11 +126,25 @@
       tab.tabIndex = active ? 0 : -1;
       if (active && focus) tab.focus();
     }
+    if (name === currentScene) return;
+    currentScene = name;
+    sceneAnimations.forEach((animation) => animation.cancel());
+    sceneAnimations = [];
     document.getElementById('demo-main').innerHTML = scene.content;
     document.getElementById('assistant-content').innerHTML = scene.chat;
     document.getElementById('scene-index').textContent = scene.index;
     document.getElementById('scene-description').textContent = scene.description;
     panel.setAttribute('aria-labelledby', `tab-${name}`);
+    if (!motionPreference.matches && typeof panel.animate === 'function') {
+      const elements = document.querySelectorAll('#demo-main > *, #assistant-content > *');
+      elements.forEach((element, index) => {
+        sceneAnimations.push(element.animate([
+          { opacity: 0, transform: 'translateY(10px)' },
+          { opacity: 1, transform: 'translateY(0)' }
+        ], { duration: 380, delay: Math.min(index, 5) * 35, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' }));
+      });
+    }
+    scheduleProgress();
   }
 
   tabs.forEach((tab, index) => {
@@ -124,7 +188,7 @@
   document.addEventListener('click', (event) => {
     if (!event.target.closest('.site-header')) closeMenu();
   });
-  const mobileMedia = matchMedia('(max-width: 760px)');
+  const mobileMedia = matchMedia('(max-width: 960px)');
   mobileMedia.addEventListener('change', closeMenu);
 
   // Pages serves the product presentation; the live workbench has its own host.
@@ -144,20 +208,52 @@
     timeZone: 'Asia/Shanghai', year: 'numeric'
   }).format(new Date());
 
+  // Decorative hover light follows the pointer only on devices with a precise pointer.
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
+  document.querySelectorAll('.feature-card, .trust-card, .enterprise-card').forEach((card) => {
+    let frame = 0;
+    let point;
+    card.addEventListener('pointermove', (event) => {
+      if (motionPreference.matches || !finePointer.matches) return;
+      point = { x: event.clientX, y: event.clientY };
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        const bounds = card.getBoundingClientRect();
+        card.style.setProperty('--pointer-x', `${point.x - bounds.left}px`);
+        card.style.setProperty('--pointer-y', `${point.y - bounds.top}px`);
+        frame = 0;
+      });
+    });
+    card.addEventListener('pointerleave', () => {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      card.style.removeProperty('--pointer-x');
+      card.style.removeProperty('--pointer-y');
+    });
+  });
+  const revealElements = [...document.querySelectorAll('.reveal')];
+  let revealObserver;
   if ('IntersectionObserver' in window) {
-    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-    if (!reducedMotion.matches) {
-      const observer = new IntersectionObserver((entries) => {
+    if (!motionPreference.matches) {
+      document.querySelectorAll('.feature-grid, .trust-stack, .enterprise-grid').forEach((group) => {
+        [...group.children].forEach((element, index) => element.style.setProperty('--reveal-delay', `${index % 3 * 0.08}s`));
+      });
+      revealObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
+            revealObserver.unobserve(entry.target);
+            setTimeout(() => entry.target.style.removeProperty('--reveal-delay'), 950);
           }
         });
       }, { threshold: 0.08 });
-      document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
+      revealElements.forEach((element) => revealObserver.observe(element));
       document.body.classList.add('motion-ready');
     }
+    const ambientObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => entry.target.classList.toggle('ambient-paused', !entry.isIntersecting));
+    }, { rootMargin: '100px', threshold: 0 });
+    document.querySelectorAll('.hero, .engine, .pool-diagram, .feature-large, .feature-wide, .closing-inner').forEach((element) => ambientObserver.observe(element));
     const navLinks = [...nav.querySelectorAll('a')];
     const navObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -175,4 +271,15 @@
       if (target) navObserver.observe(target);
     });
   }
+  motionPreference.addEventListener('change', (event) => {
+    if (!event.matches) return;
+    sceneAnimations.forEach((animation) => animation.cancel());
+    sceneAnimations = [];
+    revealObserver?.disconnect();
+    document.body.classList.remove('motion-ready');
+    revealElements.forEach((element) => element.classList.add('is-visible'));
+  });
+  const syncVisibility = () => document.body.classList.toggle('page-hidden', document.hidden);
+  document.addEventListener('visibilitychange', syncVisibility);
+  syncVisibility();
 })();

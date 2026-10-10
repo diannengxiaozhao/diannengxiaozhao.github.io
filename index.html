@@ -1,21 +1,35 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090c10">
+  <meta name="color-scheme" content="dark light">
   <meta name="description" content="电能小招，面向采购代理机构的 AI 招标采购智能辅助平台。贯穿需求分析、招标文件编制、文档体检、评审与投标检查、供应商风控，让专业经验与 AI 高效协作。">
   <meta property="og:type" content="website">
   <meta property="og:title" content="电能小招 · 让采购更有章法">
   <meta property="og:description" content="从需求到核验，一位懂招标、会协作、有依据的 AI 同事。">
   <title>电能小招 · AI 招标采购智能辅助平台</title>
+  <script>
+    // Apply the saved appearance before paint; storage may be unavailable in private browsing.
+    (() => {
+      let saved;
+      try { saved = localStorage.getItem('electric-bid-site-theme'); } catch {}
+      const explicit = saved === 'light' || saved === 'dark';
+      const theme = explicit ? saved : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.dataset.themeSource = explicit ? 'user' : 'system';
+      document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#090c10' : '#f6f8f5';
+    })();
+  </script>
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="preload" href="./assets/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./styles.css">
-  <script src="./site-config.js" defer></script>
-  <script src="./main.js" defer></script>
+  <link rel="stylesheet" href="./styles.css?v=9f1f504ee754">
+  <script src="./site-config.js?v=011cc8b5de54" defer></script>
+  <script src="./main.js?v=db0db1d6ab62" defer></script>
 </head>
 <body id="top">
+  <div class="reading-progress" aria-hidden="true"></div>
   <a class="skip-link" href="#main">跳转到正文</a>
   <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
@@ -34,6 +48,8 @@
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5C8 2 3 3 3 3v16s5-1 9 2c4-3 9-2 9-2V3s-5-1-9 2Zm0 0v16"/></symbol>
     <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11a8 8 0 0 1-8 8H7l-4 3V11a9 9 0 0 1 18 0Z"/><path d="M7 10h10M7 14h6"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 13.5A8.7 8.7 0 0 1 10.5 3a9 9 0 1 0 10 10.5Z"/></symbol>
   </svg>
 
   <header class="site-header">
@@ -46,6 +62,7 @@
         <a href="#workflow">产品体验</a><a href="#features">核心能力</a><a href="#intelligence">协作理念</a><a href="#enterprise">灵活配置</a>
       </nav>
       <div class="header-actions">
+        <button class="theme-toggle" type="button" aria-label="切换到亮色模式" title="切换到亮色模式"><span class="theme-icons" aria-hidden="true"><svg class="icon theme-sun"><use href="#i-sun"/></svg><svg class="icon theme-moon"><use href="#i-moon"/></svg></span><span class="theme-label">亮色</span></button>
         <a class="nav-cta" href="/login" data-app-link>进入工作台 <svg class="icon"><use href="#i-up-right"/></svg></a>
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="打开导航菜单"><span></span><span></span></button>
       </div>
@@ -86,6 +103,14 @@
             </g>
             <g stroke="#93c866" stroke-opacity=".45" stroke-width="1.3"><path d="M157 116h67l48 60M442 144h-50l-55 50M131 342h75l69-47M463 355h-56l-59-68"/></g>
             <g fill="#bffb7e"><circle cx="157" cy="116" r="3"/><circle cx="442" cy="144" r="3"/><circle cx="131" cy="342" r="3"/><circle cx="463" cy="355" r="3"/></g>
+            <g class="engine-data-lines" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="9 151">
+              <path d="M157 116h67l48 60" pathLength="160"/>
+              <path d="M442 144h-50l-55 50" pathLength="160"/>
+              <path d="M275 295 206 342h-75" pathLength="160"/>
+              <path d="M348 287 407 355h56" pathLength="160"/>
+            </g>
+            <ellipse class="engine-orbit-flow" cx="300" cy="270" rx="252" ry="148" transform="rotate(-19 300 270)" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 48"/>
+            <circle class="engine-core-halo" cx="300" cy="248" r="71" stroke="currentColor" stroke-opacity=".18"/>
             <g class="core-stack">
               <path d="m164 309 136-75 136 75-136 76-136-76Z" fill="#101e18" stroke="#334b37"/>
               <path d="m164 309 136 76 136-76v13l-136 76-136-76v-13Z" fill="#0e1714" stroke="#29432d"/>
@@ -126,14 +151,14 @@
           <div><div class="eyebrow section-eyebrow"><span>01 / PRODUCT EXPERIENCE</span></div><h2>采购的每一步<br>都有专业的下一步<span class="accent">.</span></h2></div>
           <p>把分散的文件、经验与规则，串成一条工作链。<br>同一位项目助手，陪你从需求走到检查。</p>
         </div>
-        <div class="workflow-tabs" role="tablist" aria-label="产品工作场景">
+        <div class="workflow-tabs reveal" role="tablist" aria-label="产品工作场景">
           <button id="tab-requirement" type="button" role="tab" aria-selected="true" aria-controls="scene-panel" data-scene="requirement"><span>01</span>需求与策略<svg class="icon"><use href="#i-arrow"/></svg></button>
           <button id="tab-document" type="button" role="tab" aria-selected="false" aria-controls="scene-panel" tabindex="-1" data-scene="document"><span>02</span>文件编制<svg class="icon"><use href="#i-arrow"/></svg></button>
           <button id="tab-health" type="button" role="tab" aria-selected="false" aria-controls="scene-panel" tabindex="-1" data-scene="health"><span>03</span>文档体检<svg class="icon"><use href="#i-arrow"/></svg></button>
           <button id="tab-review" type="button" role="tab" aria-selected="false" aria-controls="scene-panel" tabindex="-1" data-scene="review"><span>04</span>评审与检查<svg class="icon"><use href="#i-arrow"/></svg></button>
           <button id="tab-supplier" type="button" role="tab" aria-selected="false" aria-controls="scene-panel" tabindex="-1" data-scene="supplier"><span>05</span>供应商风控<svg class="icon"><use href="#i-arrow"/></svg></button>
         </div>
-        <div class="workbench" id="scene-panel" role="tabpanel" aria-labelledby="tab-requirement" tabindex="0">
+        <div class="workbench reveal" id="scene-panel" role="tabpanel" aria-labelledby="tab-requirement" tabindex="0">
           <div class="workbench-chrome"><div class="window-dots"><i></i><i></i><i></i></div><span>电能小招 / 项目工作台</span><span class="demo-label">功能场景示意</span></div>
           <div class="workbench-body">
             <aside class="demo-sidebar" aria-label="示意界面导航">
